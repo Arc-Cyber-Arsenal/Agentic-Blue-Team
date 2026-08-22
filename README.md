@@ -1,234 +1,114 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Arc-Cyber-Arsenal/Agentic-Blue-Team/master/agentic%20blue%20team.png" alt="403-Killchain Banner" width="400">
+  <img src="https://raw.githubusercontent.com/Archsec-Emman/Agentic-Blue-Team/master/agentic%20blue%20team.png" alt="Agentic Blue Team Banner" width="400">
 </p>
 
+# Agentic Blue Team (ABT)
 
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/docker-supported-blue)](https://www.docker.com/)
 
-# Agentic Blue Team
+**An agent-centric SOC platform that fuses local-LLM intelligence with a Security Incident Response Platform (SIRP) to automate alert triage, enrichment, and response — inside your own infrastructure.**
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey)](https://github.com/Archsec-Emman/Agentic-Blue-Team)
-[![Docker](https://img.shields.io/badge/docker-support-blue)](https://www.docker.com/)
-
-**An open‑source, agent‑centric platform that fuses AI intelligence with a built‑in Security Incident Response Platform to automate alert triage, enrichment, and response — all within your own infrastructure.**
-
----
-
-## 📖 Overview
-
-Agentic Blue Team is built to transform how security operations centers (SOCs) handle alerts. Instead of a static dashboard, the platform orchestrates modular AI agents (powered by local LLMs) to continuously ingest alerts, enrich them with threat intelligence, and produce structured security records. A fully integrated SIRP—built on the Nocoly worksheet platform—manages cases, alerts, artifacts, and playbooks, allowing analysts to trigger automated remediation or threat‑hunting workflows with a single click.
-
-The entire system is designed for local deployment: your data, models, and operations never leave your environment, ensuring complete confidentiality and compliance.
+> **Credits:** ABT is a maintained fork of [funnywolf's ASP](https://asp.viperrtp.com/asf/ASF/Overview/) (MIT). All core architecture — the Django/LangGraph framework, module & playbook engines, plugin system, and SIRP integration — originates from that project. This fork fixes packaging, adds a one-command Docker deployment, smoke tests with CI, and graceful degradation when optional components are missing.
 
 ---
 
-## ✨ Core Features
+## Overview
+
+Instead of a static dashboard, ABT orchestrates modular AI agents (powered by local LLMs) that continuously ingest alerts from your SIEM, enrich them with threat intelligence, and produce structured security records. A built-in SIRP manages cases, alerts, artifacts, and playbooks so analysts can trigger automated remediation or threat-hunting workflows in one click.
+
+Everything is designed for local deployment: your data, models, and operations never leave your environment.
+
+## Core Features
 
 | Feature | Description |
 |---------|-------------|
-| **AI‑Driven Intelligence** | Pre‑built agent templates (LangGraph, Dify) that use local LLMs to analyze alerts, enrich data, and determine outcomes. |
-| **Built‑in SIRP** | Full incident response platform on Nocoly with rapid customization of UIs, data models, reports, and workflows. |
-| **Powerful Automation Workflow** | Webhook‑based ingestion from Splunk / Kibana → Redis Streams → agent analysis → SIRP → playbooks. |
-| **Highly Extensible** | Rich library of Python modules and plugins for integrating with any security device or API. |
-| **Local Deployment & Data Control** | Fully self‑hosted; everything stays inside your environment. |
-| **Streaming + Batch Processing** | Real‑time alert analysis plus event‑driven automation for user‑triggered tasks. |
+| **AI-driven analysis** | LangGraph agent templates using local LLMs analyze alerts, enrich data, and decide outcomes. |
+| **Built-in SIRP** | Incident response platform for cases, alerts, artifacts, playbooks and knowledge. |
+| **Automation pipeline** | Webhook ingestion (Splunk/Kibana) → Redis Streams → agent analysis → SIRP → playbooks. |
+| **Extensible plugins** | Python plugins for Splunk, ELK, Qdrant, OTX, LLMs (Ollama/OpenAI-compatible), and more. |
+| **Local-first** | Self-hosted; nothing leaves your environment. |
 
----
-
-## 🧠 Architecture
-
-Agentic Blue Team follows a **five‑stage pipeline** that maps directly to the modern SOC workflow:
+## Architecture
 
 ```
 SIEM (Splunk/ELK) → Webhook → Redis Stream → AI Agents → SIRP → Playbooks
 ```
 
-### 1. Alert Ingestion
-Splunk, Kibana/ELK, or any SIEM forwards security alerts via a **webhook** to the platform’s built‑in receiver.
+1. **Alert ingestion** — SIEM alerts arrive via the webhook receiver (`PLUGINS/Forwarder`).
+2. **Stream processing** — Alerts land in Redis Streams (persistent, replayable queues).
+3. **Agent analysis** — Modules in `MODULES/` consume streams; LangGraph agents reason over each alert.
+4. **SIRP records** — Results become cases/alerts/artifacts in the SIRP worksheet backend.
+5. **Response** — Analysts trigger `PLAYBOOKS/` for hunting, enrichment or remediation.
 
-### 2. Stream Processing
-Alerts are pushed into dedicated **Redis Streams** (one per alert type), which act as persistent, replayable message queues.
-
-### 3. AI Agent Analysis
-Modular AI agents consume alerts from the streams and perform deep analysis using **local LLMs**, threat intelligence enrichment, and rule‑based decision making.
-
-### 4. SIRP Integration
-Agent outputs are formatted into standardized security records and sent to the built‑in **Security Incident Response Platform**, where they create or update cases, alerts, and artifacts.
-
-### 5. Automated Response
-Analysts trigger **playbooks** directly from the SIRP interface to execute further actions — such as threat hunting, remediation, or notifications — closing the loop.
-
----
-
-## 🗃️ Core Data Model
-
-The SIRP is built on a **clean, ontology‑driven data model** that separates detection, investigation, and response concerns.
-
-| Entity | Purpose |
-|--------|---------|
-| **Case** | The primary investigation object; aggregates alerts, artifacts, enrichments, and tickets. |
-| **Alert** | Middle‑layer object that retains detection‑source information (OCSF style) and links to artifacts. |
-| **Artifact** | The atomic unit: IP, domain, hash, username, etc. – the natural input for any query or enrichment. |
-| **Enrichment** | Structured, attachable information (threat intel, CMDB data, logs) that can be independently maintained. |
-| **Ticket** | Synchronization with external ticketing systems, linked to a Case. |
-| **Playbook** | Automated logic (often LangGraph orchestration) that runs against Cases, Alerts, or Artifacts. |
-| **Knowledge** | Shared, high‑currency knowledge base that serves both human analysts and AI agents. |
-
----
-
-## 🚀 Installation
-
-### Prerequisites
-- Python 3.10+
-- Redis
-- Docker (optional, for containerized deployment)
-
-### Quick Start
+## Quick Start (Docker)
 
 ```bash
-# Clone the repository
-git clone https://github.com/Archsec-Emman/Agentic-Blue-Team
+git clone https://github.com/Archsec-Emman/Agentic-Blue-Team.git
 cd Agentic-Blue-Team
 
-# Install dependencies
-pip install -r requirements.txt
+# 1. generate plugin configs from the shipped examples
+python bootstrap.py            # or: cp PLUGINS/*/CONFIG.example.py → CONFIG.py
 
-# Run database migrations
-python manage.py migrate
+# 2. start redis + qdrant + web
+docker compose up -d --build
 
-# Start the development server
-python manage.py runserver
+# 3. open the app
+open http://localhost:8000/
 ```
 
-The platform will be available at `http://localhost:8000`.
+The web container runs Django migrations automatically. Redis Stack (streams + cache) and Qdrant (vector store) come up as part of the same compose project.
 
-### Docker Deployment (Recommended for Production)
+### Download embedding models
+
+Knowledge-base search needs two local models (BM25 sparse + BGE reranker):
 
 ```bash
-# Build and start all services
-docker-compose up -d
-
-# Services:
-# - Web UI (Nocoly SIRP)
-# - Redis Streams
-# - Uvicorn (ASGI server)
-# - Ollama (optional, for local LLMs)
+pip install -e .[dev]
+python PLUGINS/Huggingface/download_model.py
 ```
 
----
+Until they are present, the app boots normally with knowledge sync disabled.
 
-## ⚙️ Configuration
+### Configure an LLM
 
-### Connecting a SIEM (Splunk / ELK)
+Edit `PLUGINS/LLM/CONFIG.py` (created by `bootstrap.py`) and point it at Ollama or any OpenAI-compatible endpoint. See comments in that file.
 
-1. Configure your SIEM to send alerts via webhook to `http://<agentic-blue-team>:8000/api/webhook/siem`
-2. Set the appropriate authentication token in `settings.py`.
-3. Alerts will automatically be routed to the correct Redis stream based on their type.
+### Connect the SIRP backend
 
-### Using Local LLMs
+ABT stores cases/alerts/artifacts in a HAP/Nocoly-style worksheet platform. Set your instance URL, app key and sign in `PLUGINS/SIRP/CONFIG.py`. Without it, alert analysis runs but records are not persisted.
 
-Agentic Blue Team supports any local LLM through the **Ollama** plugin. To integrate:
+## Manual Setup (without Docker)
 
-1. Install Ollama and pull a model (e.g., `ollama pull llama3.2`).
-2. In the platform, go to **Plugins → Ollama** and enter the model name.
-3. Agents will automatically use the configured LLM for analysis.
+```bash
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -e .
 
-### Customizing the SIRP
+python bootstrap.py                                 # create CONFIG.py files
+# start Redis Stack on localhost:6379 (see Docker/RedisStack/docker-compose.yml)
 
-The built‑in SIRP (Nocoly) allows full customization of:
-- **UIs** – Drag‑and‑drop dashboards and forms
-- **Data models** – Add custom fields to Cases, Alerts, Artifacts, etc.
-- **Reports** – Generate compliance or summary reports
-- **Workflows** – Define approval chains or automated transitions
-
-Refer to the `ARCHITECTURE.md` file for a detailed explanation of the data model and extension points.
-
----
-
-## 🔌 Plugin Ecosystem
-
-Agentic Blue Team includes a growing library of **plug‑and‑play modules** under the `PLUGINS/` directory.
-
-| Plugin | Purpose |
-|--------|---------|
-| **AlienVaultOTX** | Pull threat intelligence from OTX |
-| **ClaudeCode** | Use Anthropic’s Claude for agent reasoning |
-| **ELK** | Native integration with Elastic Stack |
-| **Embeddings** | Vector embeddings for alert similarity search |
-| **Forwarder** | Relay alerts to external systems |
-| **Huggingface** | Access Hugging Face models |
-| **LLM** | Generic LLM adapter (OpenAI, Gemini, etc.) |
-| **MCP** | Model Context Protocol support |
-| **Qdrant** | Vector database for artifact correlation |
-
-To activate a plugin, simply add its configuration in `settings.py`; the platform auto‑discovers and loads it.
-
----
-
-## 📂 Project Structure
-
-```
-Agentic-Blue-Team/
-├── ABT/                   # Django project configuration
-│   ├── settings.py        # Main settings (plugins, LLMs, webhooks)
-│   ├── urls.py            # URL routing
-│   └── asgi.py / wsgi.py
-├── AGENTS/                # Modular AI agents
-│   ├── agent_cmdb.py      # CMDB enrichment agent
-│   ├── agent_report.py    # Report generation agent
-│   ├── agent_siem.py      # SIEM alert processing
-│   └── agent_threat_intelligence.py
-├── Core/                  # Core data models (Case, Alert, Artifact, etc.)
-│   ├── models.py          # SIRP data model
-│   ├── serializers.py
-│   └── views.py           # REST API endpoints
-├── PLAYBOOKS/             # Automated response playbooks
-│   ├── ALERT/             # Alert‑specific playbooks
-│   ├── ARTIFACT/          # Artifact‑specific playbooks
-│   └── CASE/              # Case‑level remediation workflows
-├── PLUGINS/               # Extensible plugin library (see list above)
-├── Lib/                   # Core libraries (API, base modules, etc.)
-├── DATA/                  # Agent‑specific data handlers
-├── Docker/                # Docker Compose services (DB, Redis, Ollama, etc.)
-├── ARCHITECTURE.md        # Detailed architecture reference
-├── manage.py              # Django management script
-├── pyproject.toml         # Python project metadata
-└── README.md              # This file
+python manage.py migrate
+python manage.py runserver 8000
 ```
 
----
+Environment variable `REDIS_URL` overrides the default `redis://localhost:6379/`.
 
-## 🤝 Contributing
+## Ingesting test alerts
 
-Contributions are welcome! Please follow these steps:
+Sample alert injectors live in `DATA/` (e.g. `NDR-Rule-05-Suspect-C2-Communication`). Point them at your Forwarder endpoint to watch the full pipeline react.
 
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/amazing-feature`).
-3. Commit your changes (`git commit -m 'Add some amazing feature'`).
-4. Push to the branch (`git push origin feature/amazing-feature`).
-5. Open a Pull Request.
+## Tests
 
-Areas where help is especially valuable:
-- **New plugins** – Add support for more threat intel sources or SIEMs.
-- **Agent improvements** – Enhance the existing agents or create new ones.
-- **Playbook examples** – Provide production‑ready playbooks for common threats.
-- **Documentation** – Expand examples and how‑to guides.
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.
-
----
-
-## 📬 Contact & Support
-
-- **GitHub Issues**: [https://github.com/Archsec-Emman/Agentic-Blue-Team/issues](https://github.com/Archsec-Emman/Agentic-Blue-Team/issues)
-- **Author**: [Archsec-Emman](https://github.com/Archsec-Emman)
-
----
-
-*If this platform accelerates your security operations, please consider giving the repository a star.* ⭐
+```bash
+python bootstrap.py
+python manage.py check
+python manage.py test tests -v 2     # needs Redis on localhost:6379
 ```
+
+CI runs the same suite against a real Redis service on every push.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Contains portions Copyright (c) 2025 funnywolf (upstream ASP) and Copyright (c) 2026 Archsec-Emman.

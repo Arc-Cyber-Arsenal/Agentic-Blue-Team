@@ -26,7 +26,7 @@ if __name__ == "__main__":
         with open(uuid_file_path, 'w') as f:
             f.write(default_uuid)
 
-    parser = argparse.ArgumentParser(description="ASP MCP Server")
+    parser = argparse.ArgumentParser(description="ABT MCP Server")
     parser.add_argument("--host", default="0.0.0.0", help="Bind host (default: 0.0.0.0)")
     parser.add_argument("--port", type=int, default=7001, help="Bind port (default: 7001)")
     parser.add_argument("--uuid", default=default_uuid, help=f"UUID path prefix (default: {default_uuid})")
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     port = args.port
     uuid_str = args.uuid
 
-    mcp = FastMCP("ASP-MCP")
+    mcp = FastMCP("ABT-MCP")
     mcp.settings.sse_path = f"/{uuid_str}/sse"
     mcp.settings.message_path = f"/{uuid_str}/messages"
     mcp.settings.host = host

@@ -11,7 +11,10 @@ except:
     SECRET_KEY = utils.get_random_secret_key()
     os.environ['SECRET_KEY'] = SECRET_KEY
 
-from PLUGINS.Redis.CONFIG import REDIS_URL
+try:
+    from PLUGINS.Redis.CONFIG import REDIS_URL
+except ImportError:
+    REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/')
 
 DEBUG = False
 ALLOWED_HOSTS = ['*']

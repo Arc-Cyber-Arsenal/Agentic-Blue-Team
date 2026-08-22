@@ -1,0 +1,42 @@
+services:
+  redis:
+    image: redis/redisstack-server:latest
+    container_name: abt-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: abt-qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
+
+  web:
+    build: .
+    container_name: abt-web
+    command: sh -c "python manage.py migrate --noinput && python -m uvicorn ABT.asgi:application --host 0.0.0.0 --port 8000"
+    environment:
+      REDIS_URL: redis://redis:6379/
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - sqlite-data:/app/Docker/DB
+      - hf-models:/app/Docker/Huggingface
+
+volumes:
+  redis-data:
+  qdrant-data:
+  sqlite-data:
+  hf-models:

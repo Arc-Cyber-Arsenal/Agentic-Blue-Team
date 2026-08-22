@@ -1,7 +1,7 @@
 [project]
-name = "asf"
+name = "agentic-blue-team"
 version = "0.1.0"
-description = "Add your description here"
+description = "Agent-centric SOC automation: Django + LangGraph + Redis Streams alert triage platform"
 readme = "README.md"
 requires-python = ">=3.12, <3.14"
 dependencies = [
@@ -44,6 +44,8 @@ dependencies = [
     "uvicorn>=0.42.0",
     "fastmcp>=3.2.0",
 ]
-[[tool.uv.index]]
-url = "https://mirrors.aliyun.com/pypi/simple/"
-default = true
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]

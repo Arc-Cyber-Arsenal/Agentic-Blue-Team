@@ -1,0 +1,51 @@
+name: Tests
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile check
+        run: python -m compileall ABT Core Lib MODULES PLAYBOOKS PLUGINS AGENTS tests bootstrap.py
+
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      redis:
+        image: redis/redisstack-server:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      REDIS_URL: redis://localhost:6379/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install CPU torch first
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install project
+        run: pip install -e .[dev]
+      - name: Bootstrap plugin configs
+        run: python bootstrap.py
+      - name: Django system check + migrate
+        run: |
+          python manage.py check
+          python manage.py migrate --noinput
+      - name: Run smoke tests
+        run: python manage.py test tests -v 2

@@ -13,7 +13,12 @@ from Lib.moduleengine import ModuleEngine
 from Lib.playbookloader import PlaybookLoader
 from Lib.threadmodulemanager import thread_module_manager
 from Lib.xcache import Xcache
-from PLUGINS.Embeddings.embeddings_qdrant import embedding_api_singleton_qdrant, SIRP_KNOWLEDGE_COLLECTION
+try:
+    from PLUGINS.Embeddings.embeddings_qdrant import embedding_api_singleton_qdrant, SIRP_KNOWLEDGE_COLLECTION
+    EMBEDDINGS_AVAILABLE = True
+except Exception as emb_err:
+    logger.warning(f"Embeddings unavailable, knowledge sync disabled: {emb_err}")
+    EMBEDDINGS_AVAILABLE = False
 from PLUGINS.Redis.redis_stream_api import RedisStreamAPI
 from PLUGINS.SIRP.sirpapi import Playbook, Knowledge
 from PLUGINS.SIRP.sirpmodel import PlaybookJobStatus, KnowledgeAction, PlaybookModel
@@ -25,7 +30,11 @@ class MainMonitor(object):
 
     def __init__(self):
         self.engine = ModuleEngine()
-        self.redis_stream_api = RedisStreamAPI()
+        try:
+            self.redis_stream_api = RedisStreamAPI()
+        except Exception as redis_err:
+            logger.warning(f"Redis unavailable, stream consumers will retry in background: {redis_err}")
+            self.redis_stream_api = None
         self.MainScheduler = BackgroundScheduler(timezone='Asia/Shanghai')
 
     @staticmethod
@@ -82,7 +91,8 @@ class MainMonitor(object):
 
         # Start background tasks
         self.start_background_task(self.subscribe_pending_playbook, "subscribe_pending_playbook", delay_time)
-        self.start_background_task(self.subscribe_knowledge_action, "subscribe_knowledge_action", delay_time)
+        if EMBEDDINGS_AVAILABLE:
+            self.start_background_task(self.subscribe_knowledge_action, "subscribe_knowledge_action", delay_time)
 
         # engine
         self.engine.start()
