@@ -5,7 +5,12 @@ import requests
 from langchain_core.documents import Document
 
 from Lib.log import logger
-from PLUGINS.Embeddings.embeddings_qdrant import embedding_api_singleton_qdrant, SIRP_KNOWLEDGE_COLLECTION
+try:
+    from PLUGINS.Embeddings.embeddings_qdrant import embedding_api_singleton_qdrant, SIRP_KNOWLEDGE_COLLECTION
+except Exception as emb_err:
+    logger.warning(f"Embeddings unavailable, knowledge search disabled: {emb_err}")
+    embedding_api_singleton_qdrant = None
+    SIRP_KNOWLEDGE_COLLECTION = "SIRP_KNOWLEDGE_COLLECTION"
 from PLUGINS.SIRP.CONFIG import SIRP_NOTICE_WEBHOOK
 from PLUGINS.SIRP.nocolyapi import WorksheetRow
 from PLUGINS.SIRP.nocolymodel import AccountModel, Condition, Group, Operator
@@ -621,6 +626,9 @@ class Knowledge(BaseWorksheetEntity[KnowledgeModel]):
         logger.debug(f"knowledge search : {query}")
         threshold = 0.5
         result_all = []
+        if embedding_api_singleton_qdrant is None:
+            logger.warning("Knowledge search requested but embeddings backend is unavailable.")
+            return json.dumps([], ensure_ascii=False)
         docs_qdrant = embedding_api_singleton_qdrant.search_documents_with_rerank(collection_name=SIRP_KNOWLEDGE_COLLECTION, query=query, k=10, top_n=3)
         logger.debug(docs_qdrant)
         for doc in docs_qdrant:
