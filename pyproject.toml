@@ -49,3 +49,7 @@ dependencies = [
 dev = [
     "pytest",
 ]
+
+[tool.setuptools.packages.find]
+include = ["ABT*", "Core*", "Lib*"]
+namespaces = true
