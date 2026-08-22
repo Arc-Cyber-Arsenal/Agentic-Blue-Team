@@ -1,6 +1,6 @@
 services:
   redis:
-    image: redis/redisstack-server:latest
+    image: redis/redis-stack-server:latest
     container_name: abt-redis
     ports:
       - "6379:6379"

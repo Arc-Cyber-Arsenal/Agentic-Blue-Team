@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 30
     services:
       redis:
-        image: redis/redisstack-server:latest
+        image: redis/redis-stack-server:latest
         ports:
           - 6379:6379
         options: >-
